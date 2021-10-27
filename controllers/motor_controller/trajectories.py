@@ -153,7 +153,15 @@ class Spline(Trajectory):
         p : np.ndarray shape(k+1,)
             The coefficients of the polynomial at time t, see coeffs
         """
-        raise NotImplementedError()
+
+        t = t-self.start
+
+        for k in range(self.n-1):
+            if self.knots[k, 0] < t and self.knots[k+1, 0] > t:
+                adjusted_t = t-self.knots[k, 0]
+                p = self.coeffs[k]
+                return adjusted_t , p
+        return 0,0
 
     def getVal(self, t, d=0):
         if t <= self.start:
@@ -164,14 +172,21 @@ class Spline(Trajectory):
             if d == 0:
                 return self.knots[self.n-1, 1]
             return 0
-        
-        if d != 0:
-            return 0
 
-        if d == 0:
-            for k in range(self.n-1):
-                if self.knots[k, 0] < t and self.knots[k+1, 0] > t:
-                    return self.coeffs[k-1, 0]
+        adjusted_t,p = self.getPolynomial(t)
+        p1 = p.copy()
+        
+        if d == 0 :
+            return p[0]
+
+        if d != 0 :
+            for degre in range (d):
+                p1[0] = p[1]
+                p1[1] = p[2]*2
+                p1[2] = p[3]*3
+                p1[3] = 0
+                value = p1[0] + adjusted_t * p1[1] + adjusted_t * adjusted_t  * p1[2]
+            return value
 
 
 
