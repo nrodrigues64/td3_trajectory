@@ -121,7 +121,7 @@ class Spline(Trajectory):
         self.knots = knots
         self.n = len(knots)
         self.coeffs = np.zeros((self.n-1, 4))
-        self.end = self.knots[self.n-1, 0]
+        self.end = self.knots[self.n-1, 0] + start
         self.updatePolynomials()
 
     @abstractmethod
@@ -176,24 +176,21 @@ class Spline(Trajectory):
         adjusted_t,p = self.getPolynomial(t)
         p1 = p.copy()
         
-        if d == 0 :
-            return p[0]
-
-        if d != 0 :
-            for degre in range (d):
-                p1[0] = p[1]
-                p1[1] = p[2]*2
-                p1[2] = p[3]*3
-                p1[3] = 0
-                value = p1[0] + adjusted_t * p1[1] + adjusted_t * adjusted_t  * p1[2]
-            return value
+        for degre in range (d):
+            p1[0] = p1[1]
+            p1[1] = p1[2]*2
+            p1[2] = p1[3]*3
+            p1[3] = 0
+        
+        value = p1[0] + adjusted_t * p1[1] + adjusted_t * adjusted_t  * p1[2]
+        return value
 
 
 
 class ConstantSpline(Spline):
     def updatePolynomials(self):
         for i in range(self.n-1):
-            self.coeffs[i, 0] = self.knots[i+1, 1]
+            self.coeffs[i, 0] = self.knots[i, 1]
             self.coeffs[i, 1] = 0
             self.coeffs[i, 2] = 0
             self.coeffs[i, 3] = 0
@@ -201,7 +198,17 @@ class ConstantSpline(Spline):
 
 class LinearSpline(Spline):
     def updatePolynomials(self):
-        raise NotImplementedError()
+        for i in range(self.n-1):
+            x0 = self.knots[i, 1]
+            x1 = self.knots[i+1, 1]
+            t0 = self.knots[i, 0]
+            t1 = self.knots[i+1, 0]
+            
+            self.coeffs[i, 0] = x0
+            self.coeffs[i, 1] = (x1 - x0) / (t1 - t0)
+            self.coeffs[i, 2] = 0
+            self.coeffs[i, 3] = 0
+
 
 
 class CubicZeroDerivativeSpline(Spline):
@@ -210,6 +217,8 @@ class CubicZeroDerivativeSpline(Spline):
     """
 
     def updatePolynomials(self):
+        # np.linalg.solve() pour résoudre le système slide 17
+
         raise NotImplementedError()
 
 
