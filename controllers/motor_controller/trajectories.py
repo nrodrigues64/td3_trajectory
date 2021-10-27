@@ -176,13 +176,13 @@ class Spline(Trajectory):
         adjusted_t,p = self.getPolynomial(t)
         p1 = p.copy()
         
-        for degre in range (d):
+        for _ in range(d):
             p1[0] = p1[1]
             p1[1] = p1[2]*2
             p1[2] = p1[3]*3
             p1[3] = 0
         
-        value = p1[0] + adjusted_t * p1[1] + adjusted_t * adjusted_t  * p1[2]
+        value = p1[0] + adjusted_t * p1[1] + adjusted_t**2 * p1[2] + adjusted_t**3 * p1[3]
         return value
 
 
@@ -217,9 +217,31 @@ class CubicZeroDerivativeSpline(Spline):
     """
 
     def updatePolynomials(self):
-        # np.linalg.solve() pour résoudre le système slide 17
+        for i in range(self.n-1):
+            x0 = self.knots[i, 1]
+            x1 = self.knots[i+1, 1]
+            t0 = self.knots[i, 0]
+            t1 = self.knots[i+1, 0]
+            
+            delta_t = t1-t0
+            A = np.array([
+                [0, 0, 0, 1],
+                [delta_t**3, delta_t**2, delta_t, 1],
+                [0, 0, 1, 0],
+                [3*delta_t**2, 2*delta_t, 1, 0]
+            ])
 
-        raise NotImplementedError()
+            B = np.array([x0, x1, 0, 0])
+
+            solutions = np.linalg.solve(A, B)
+
+            self.coeffs[i, 0] = solutions[3]
+            self.coeffs[i, 1] = solutions[2]
+            self.coeffs[i, 2] = solutions[1]
+            self.coeffs[i, 3] = solutions[0]
+            # On a inversé l'ordre des solutions car on pensait que c'était
+            # a + bx + cx^2 + dx^3 alors que c'était ax^3 + bx^2 + cx + d
+
 
 
 class CubicWideStencilSpline(Spline):
