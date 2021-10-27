@@ -121,7 +121,6 @@ class Spline(Trajectory):
         self.knots = knots
         self.n, _ = knots.shape
         self.coeffs = np.zeros((self.n-1, 4))
-        raise NotImplementedError()
 
     @abstractmethod
     def updatePolynomials(self):
@@ -155,22 +154,26 @@ class Spline(Trajectory):
         raise NotImplementedError()
 
     def getVal(self, t, d=0):
-        if t < self.start:
+        if t <= self.start:
             if d == 0:
                 return self.knots[0, 1]
             return 0
-        elif t > self.end:
+        elif t >= self.end:
             if d == 0:
                 return self.knots[self.n-1, 1]
             return 0
 
-        # TODO : todo
-        
+        epsilon = 0.01
+
 
 
 class ConstantSpline(Spline):
     def updatePolynomials(self):
-        raise NotImplementedError()
+        for i in range(self.n-1):
+            self.coeffs[i, 0] = self.knots[i+1, 1]
+            self.coeffs[i, 1] = 0
+            self.coeffs[i, 2] = 0
+            self.coeffs[i, 3] = 0
 
 
 class LinearSpline(Spline):
