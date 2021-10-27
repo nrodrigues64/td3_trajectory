@@ -118,6 +118,9 @@ class Spline(Trajectory):
 
     def __init__(self, knots, start=0):
         super().__init__(start)
+        self.knots = knots
+        n,_ = knots.shape
+        self.coeffs = np.zeros(n-1, 4)
         raise NotImplementedError()
 
     @abstractmethod
