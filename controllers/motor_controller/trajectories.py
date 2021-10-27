@@ -75,7 +75,7 @@ class Trajectory:
         Computes the value of the derivative of order d at time t.
 
         Notes:
-        - If $t$ is before (resp. after) the start (resp. after) of the
+        - If $t$ is before (resp. after) the start (resp. the end) of the
          trajectory, returns:
           - The position at the start (resp. end) of the trajectory if d=0
           - 0 for any other value of $d$
@@ -119,8 +119,8 @@ class Spline(Trajectory):
     def __init__(self, knots, start=0):
         super().__init__(start)
         self.knots = knots
-        n,_ = knots.shape
-        self.coeffs = np.zeros(n-1, 4)
+        self.n, _ = knots.shape
+        self.coeffs = np.zeros((self.n-1, 4))
         raise NotImplementedError()
 
     @abstractmethod
@@ -155,7 +155,17 @@ class Spline(Trajectory):
         raise NotImplementedError()
 
     def getVal(self, t, d=0):
-        raise NotImplementedError()
+        if t < self.start:
+            if d == 0:
+                return self.knots[0, 1]
+            return 0
+        elif t > self.end:
+            if d == 0:
+                return self.knots[self.n-1, 1]
+            return 0
+
+        # TODO : todo
+        
 
 
 class ConstantSpline(Spline):
