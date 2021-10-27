@@ -119,7 +119,7 @@ class Spline(Trajectory):
     def __init__(self, knots, start=0):
         super().__init__(start)
         self.knots = knots
-        self.n, _ = knots.shape
+        self.n = len(knots)
         self.coeffs = np.zeros((self.n-1, 4))
         self.end = self.knots[self.n-1, 0] + self.start
 
@@ -167,8 +167,7 @@ class Spline(Trajectory):
         if d == 0:
             for k in range(self.n-1):
                 if self.knots[k, 0] < t and self.knots[k+1, 0] > t:
-                    coeff = self.coeffs[k]
-                    return coeff[1]
+                    return self.coeffs[k, 0]
 
 
 class ConstantSpline(Spline):
