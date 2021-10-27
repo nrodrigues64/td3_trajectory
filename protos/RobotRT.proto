@@ -1,0 +1,127 @@
+PROTO RobotRT [
+  field SFVec3f    translation  0 0 0
+  field SFRotation rotation     0 1 0 0
+  field SFString   name         "robot_rt"
+  field SFString   customData   ""
+]
+{
+  Robot {
+    translation IS translation
+    rotation IS rotation
+    name IS name
+    customData IS customData
+    %{
+      pi = 3.1416
+      W = 0.05        -- [m] The width of the structure
+      L0 = 1.0        -- [m]
+      L1 = 0.5        -- [m]
+      L1_offset = 0.2 -- [m]
+      L2 = 0.25       -- [m]
+    }%
+    controller "motor_controller"
+    children [
+      Transform {
+        translation 0 0 %{=L0/2}%
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.0 0.0 0.0
+              roughness 1
+              metalness 0
+            }
+            geometry Box {
+              size %{=W}% %{=W}% %{=L0}%
+            }
+          }
+        ]
+      }
+      Transform {
+        translation 0 0 %{=L0+W/2}%
+        children [
+          HingeJoint {
+            jointParameters HingeJointParameters {
+              axis 0 0 1
+              anchor 0 0 0
+            }
+            device [
+              RotationalMotor {
+                name "q1_motor"
+              }
+              PositionSensor {
+                name "q1_sensor"
+              }
+            ]
+            endPoint Solid {
+              children [
+                Transform {
+                  translation %{=(L1-W)/2}% 0 0
+                  children [
+                    Shape {
+                      appearance PBRAppearance {
+                        baseColor 1.0 0.0 0.0
+                        roughness 1
+                        metalness 0
+                      }
+                      geometry Box {
+                        size %{=L1}% %{=W}% %{=W}%
+                      }
+                    }
+                  ]
+                }
+                SliderJoint {
+                  jointParameters JointParameters {
+                    axis 1 0 0
+                    position 0.0
+                  }
+                  device [
+                    LinearMotor {
+                      name "q2_motor"
+                      minPosition 0.0
+                      maxPosition 0.25
+                    }
+                    PositionSensor {
+                      name "q2_sensor"
+                    }
+                  ]
+                  endPoint Solid {
+                    children [
+                      Transform {
+                        translation %{=L1_offset}% %{=-W/2}% 0
+                        children [
+                          Transform {
+                            translation 0 %{=-L2/2}% 0
+                            children [
+                              Shape {
+                                appearance PBRAppearance {
+                                  baseColor 0.0 0.0 1.0
+                                  roughness 1
+                                  metalness 0
+                                }
+                                geometry Box {
+                                  size %{=W}% %{=L2}% %{=W}%
+                                }
+                              }
+                            ]
+                          }
+                          Transform {
+                            translation 0 %{=-L2}% 0
+                            rotation 0 0 1 %{=pi}%
+                            children [
+                              AxisReferential {
+                                name "tooltip"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

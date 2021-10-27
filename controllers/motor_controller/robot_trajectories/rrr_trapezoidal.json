@@ -1,0 +1,12 @@
+{
+    "model_name" : "RobotRRR",
+    "trajectory_type" : "TrapezoidalVelocity",
+    "target_space" : "operational",
+    "targets" : [[0.8,0.0,1.05],[0.0,0.8,1.05],[0.0,0.8,0.65]],
+    "planification_space" : "operational",
+    "start" : 1.5,
+    "parameters" : {
+        "acc_max" : 1.0,
+        "vel_max" : 0.2
+    }
+}

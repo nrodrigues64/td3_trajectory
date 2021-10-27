@@ -1,0 +1,8 @@
+{
+    "model_name" : "RobotRRR",
+    "trajectory_type" : "CubicZeroDerivativeSpline",
+    "target_space" : "operational",
+    "targets" : [[0,0.9,0.0,1.025],[2,0.0,0.9,1.025],[4,0.0,0.9,0.65]],
+    "planification_space" : "operational",
+    "start" : 1.5
+}

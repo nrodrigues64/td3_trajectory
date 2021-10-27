@@ -1,0 +1,8 @@
+{
+    "model_name" : "RobotRT",
+    "trajectory_type" : "LinearSpline",
+    "target_space" : "operational",
+    "targets" : [[0,-0.2,0.3],[2,0.2,0.3]],
+    "planification_space" : "operational",
+    "start" : 1.5
+}

@@ -1,0 +1,80 @@
+#VRML_SIM R2021a utf8
+# license: Apache License 2.0
+# license url: http://www.apache.org/licenses/LICENSE-2.0
+#
+# A simple element to show a referential with X-axis in red, Y-axis in green and Z-axis in blue
+
+PROTO AxisReferential [
+  field SFVec3f    translation       0 0 0
+  field SFRotation rotation          0 1 0 0
+  field SFFloat    length            0.05
+  field SFFloat    radius            0.005 
+  field SFString   name              "axis referential"
+]
+{
+  Solid {
+    translation IS translation
+    rotation IS rotation
+    name IS name
+    %{
+      L = fields.length.value
+      R = fields.radius.value
+      pi = 3.1416
+    }%
+    children [
+      # X axis in red
+      Transform {
+        translation %{=L/2}% 0 0
+        rotation 0 0 1 %{=-pi/2}%
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 1.0 0.0 0.0
+              roughness 1
+              metalness 0
+            }
+            geometry Cylinder {
+              height %{=L}%
+              radius %{=R}%
+            }
+          }
+        ]
+      }
+      # Y axis in green
+      Transform {
+        translation 0 %{=L/2}% 0
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.0 1.0 0.0
+              roughness 1
+              metalness 0
+            }
+            geometry Cylinder {
+              height %{=L}%
+              radius %{=R}%
+            }
+          }
+        ]
+      }
+      # Z axis in blue
+      Transform {
+        translation 0 0 %{=L/2}%
+        rotation 1 0 0 %{=-pi/2}%
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.0 0.0 1.0
+              roughness 1
+              metalness 0
+            }
+            geometry Cylinder {
+              height %{=L}%
+              radius %{=R}%
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

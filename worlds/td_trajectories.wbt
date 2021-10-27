@@ -1,0 +1,22 @@
+#VRML_SIM R2021b utf8
+WorldInfo {
+  title "4TSD904U: TD Trajectories"
+  basicTimeStep 8
+}
+Viewpoint {
+  orientation 0.8635497428223422 -0.2050430721687529 -0.46069423724099945 0.9517841671454881
+  position -1.9490159825615703 -3.517337042369252 3.750741445359033
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+RectangleArena {
+  rotation 1 0 0 1.5708
+  floorSize 3 3
+}
+Robot {
+  name "supervisor"
+  controller "supervisor"
+  supervisor TRUE
+}

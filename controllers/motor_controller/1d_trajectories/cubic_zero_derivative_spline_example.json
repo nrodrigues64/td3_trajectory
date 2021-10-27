@@ -1,0 +1,5 @@
+{
+    "type_name" : "CubicZeroDerivativeSpline",
+    "start" : 1.0,
+    "knots" : [[0,2],[1,8],[2,3],[4,-1],[6,2]]
+}

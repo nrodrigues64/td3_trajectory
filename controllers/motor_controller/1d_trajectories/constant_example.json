@@ -1,0 +1,5 @@
+{
+    "type_name" : "ConstantSpline",
+    "start" : 1.0,
+    "knots" : [[0,2],[1,4],[2,3],[4,-1]]
+}

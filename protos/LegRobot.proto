@@ -1,0 +1,201 @@
+PROTO LegRobot [
+  field SFVec3f    translation  0 0 0
+  field SFRotation rotation     0 1 0 0
+  field SFString   name         "leg_robot"
+  field SFString   customData   ""
+]
+{
+  Robot {
+    translation IS translation
+    rotation IS rotation
+    name IS name
+    customData IS customData
+    controller "motor_controller"
+    %{
+      pi = 3.1416
+      W = 0.05     -- [m] The width of the structure
+      L0 = 1.0     -- [m]
+      L1 = 0.5     -- [m]
+      L2 = 0.3     -- [m]
+      L3 = 0.3     -- [m]
+      L4 = 0.2     -- [m]
+    }%
+    children [
+      Transform {
+        translation 0 0 %{=L0/2}%
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.0 0.0 0.0
+              roughness 1
+              metalness 0
+            }
+            geometry Box {
+              size %{=W}% %{=W}% %{=L0}%
+            }
+          }
+        ]
+      }
+      HingeJoint {
+        jointParameters HingeJointParameters {
+          axis 0 0 1
+          anchor 0 0 0
+        }
+        device [
+          RotationalMotor {
+            name "q1_motor"
+          }
+          PositionSensor {
+            name "q1_sensor"
+          }
+        ]
+        endPoint Solid {
+          children [
+            Transform {
+              translation 0 0 %{=L0+W/2}%
+              children [
+                Transform {
+                  translation 0 %{=L1/2}% 0
+                  children [
+                    Shape {
+                      appearance PBRAppearance {
+                        baseColor 1.0 0.0 0.0
+                        roughness 1
+                        metalness 0
+                      }
+                      geometry Box {
+                        size %{=W}% %{=L1+W}% %{=W}%
+                      }
+                    }
+                  ]
+                }
+                HingeJoint {
+                  jointParameters HingeJointParameters {
+                    axis 1 0 0
+                    anchor 0 %{=L1}% 0
+                  }
+                  device [
+                    RotationalMotor {
+                      name "q2_motor"
+                    }
+                    PositionSensor {
+                      name "q2_sensor"
+                    }
+                  ]
+                  endPoint Solid {
+                    children [
+                      Transform {
+                        translation %{=W}% %{=L1}% 0
+                        children [
+                          Transform {
+                            translation 0 %{=L2/2}% 0
+                            children [
+                              Shape {
+                                appearance PBRAppearance {
+                                  baseColor 0.0 0.0 1.0
+                                  roughness 1
+                                  metalness 0
+                                }
+                                geometry Box {
+                                  size %{=W}% %{=L2+W}% %{=W}%
+                                }
+                              }
+                            ]
+                          }
+                          HingeJoint {
+                            jointParameters HingeJointParameters {
+                              axis 1 0 0
+                              anchor 0 %{=L2}% 0.0
+                            }
+                            device [
+                              RotationalMotor {
+                                name "q3_motor"
+                              }
+                              PositionSensor {
+                                name "q3_sensor"
+                              }
+                            ]
+                            endPoint Solid {
+                              children [
+                                Transform {
+                                  translation %{=-W}% %{=L2}% 0.0
+                                  children [
+                                    Transform {
+                                      translation 0 %{=L3/2}% 0
+                                      children [
+                                        Shape {
+                                          appearance PBRAppearance {
+                                            baseColor 0.0 1.0 1.0
+                                            roughness 1
+                                            metalness 0
+                                          }
+                                          geometry Box {
+                                            size %{=W}% %{=L3+W}% %{=W}%
+                                          }
+                                        }
+                                      ]
+                                    }
+                                    Transform {
+                                      translation %{=W}% %{=L3}% 0
+                                      children [
+                                        HingeJoint {
+                                          jointParameters HingeJointParameters {
+                                            axis 1 0 0
+                                            anchor 0 0 0
+                                          }
+                                          device [
+                                            RotationalMotor {
+                                              name "q4_motor"
+                                            }
+                                            PositionSensor {
+                                              name "q4_sensor"
+                                            }
+                                          ]
+                                          endPoint Solid {
+                                            children [
+                                              Transform {
+                                                translation 0 %{=L4/2}% 0
+                                                children [
+                                                  Shape {
+                                                    appearance PBRAppearance {
+                                                      baseColor 1.0 0.0 1.0
+                                                      roughness 1
+                                                      metalness 0
+                                                    }
+                                                    geometry Box {
+                                                      size %{=W}% %{=L4+W}% %{=W}%
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                              Transform {
+                                                translation 0 %{=L4+W/2}% 0.0
+                                                children [
+                                                  AxisReferential {
+                                                    name "tooltip"
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
