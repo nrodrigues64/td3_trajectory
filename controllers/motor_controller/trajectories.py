@@ -286,12 +286,73 @@ class CubicCustomDerivativeSpline(Spline):
     Therefore, knots is of shape (N,3)
     """
     def updatePolynomials(self):
-        raise NotImplementedError()
+        assert self.knots.shape[1] >= 3
+
+        for i in range(self.n-1):
+            x0 = self.knots[i, 1]
+            x1 = self.knots[i+1, 1]
+            t0 = self.knots[i, 0]
+            t1 = self.knots[i+1, 0]
+            v0 = self.knots[i, 2]
+            v1 = self.knots[i+1, 2]
+            
+            delta_t = t1-t0
+            A = np.array([
+                [0, 0, 0, 1],
+                [delta_t**3, delta_t**2, delta_t, 1],
+                [0, 0, 1, 0],
+                [3*delta_t**2, 2*delta_t, 1, 0]
+            ])
+
+            B = np.array([x0, x1, v0, v1])
+
+            solutions = np.linalg.solve(A, B)
+
+            self.coeffs[i, 0] = solutions[3]
+            self.coeffs[i, 1] = solutions[2]
+            self.coeffs[i, 2] = solutions[1]
+            self.coeffs[i, 3] = solutions[0]
 
 
 class NaturalCubicSpline(Spline):
     def updatePolynomials(self):
-        raise NotImplementedError()
+        
+        A = np.zeros((4 * (self.n-1), 4 * (self.n-1)))
+        B = np.zeros(4 * (self.n-1))
+
+        for i in range(self.n-1):
+            x0 = self.knots[i, 1]
+            x1 = self.knots[i+1, 1]
+            t0 = self.knots[i, 0]
+            t1 = self.knots[i+1, 0]
+            
+            delta_t = t1-t0
+
+            start = 4*i
+            end = start + 4
+
+            A[start, start:end] = [0, 0, 0, 1]
+            A[start+1, start:end] = [delta_t**3, delta_t**2, delta_t, 1]
+            if i < self.n-2:
+                A[start+2, start:end] = [3*delta_t**2, 2*delta_t, 1, 0]
+                A[start+2, end:end+4] = [0, 0, -1, 0]
+                A[start+3, start:end] = [6*delta_t, 2, 0, 0]
+                A[start+3, end:end+4] = [0, -2, 0, 0]
+
+            B[4*i] = x0
+            B[4*i+1] = x1
+        
+        A[-2, 0:2] = [0, 2]
+        delta_t = self.knots[-1,0] - self.knots[-2,0]
+        A[-1, -4:-2] = [6*delta_t, 2]
+
+        coeffs = np.linalg.solve(A,B)
+
+        for i in range(self.n-1):
+            self.coeffs[i, 0] = coeffs[4*i+3]
+            self.coeffs[i, 1] = coeffs[4*i+2]
+            self.coeffs[i, 2] = coeffs[4*i+1]
+            self.coeffs[i, 3] = coeffs[4*i]
 
 
 class PeriodicCubicSpline(Spline):
