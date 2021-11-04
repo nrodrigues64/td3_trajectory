@@ -282,10 +282,51 @@ class PeriodicCubicSpline(Spline):
 
 class TrapezoidalVelocity(Trajectory):
     def __init__(self, knots, vMax, accMax, start):
-        raise NotImplementedError()
+        super().__init__(start)
+        self.x_src = knots[0]
+        self.x_end = knots[1]
+        self.D = self.x_end - self.x_src
+        self.vMax = vMax
+        self.accMax = accMax
+
+        if abs(self.D) > (vMax*vMax) / accMax:
+            self.Tacc = vMax / accMax
+        else:
+            self.Tacc = np.sqrt(abs(self.D) / accMax)
+        
+        self.Dacc = (self.accMax * self.Tacc * self.Tacc) / 2
+
+        self.end = self.start + 2*self.Tacc + (abs(self.D) - 2*self.Dacc) / vMax
 
     def getVal(self, t, d):
-        raise NotImplementedError()
+        if d < 0 or d > 2:
+            return 0
+        
+        if t < self.start:
+            if d == 0: return self.x_src
+            return 0
+        if t > self.end:
+            if d == 0: return self.x_end
+            return 0
+
+        D_sign = np.sign(self.D)
+        T = self.end - self.start
+
+        if t <= self.Tacc:
+            if d == 0: return self.x_src + D_sign * (self.accMax*t*t)/2
+            if d == 1: return D_sign * self.accMax * t
+            return D_sign * self.accMax
+
+        elif t > T - self.Tacc:
+            if d == 0: return self.x_end - D_sign * (self.accMax * (T-t) * (T-t))/2
+            if d == 1: return D_sign * self.accMax * (T-t)
+            return - D_sign * self.accMax
+
+        else:
+            if d == 0: return self.x_src + D_sign * (self.Dacc + self.vMax * (t-self.Tacc))
+            if d == 1: return D_sign * self.vMax
+            return 0
+        
 
 
 class RobotTrajectory:
