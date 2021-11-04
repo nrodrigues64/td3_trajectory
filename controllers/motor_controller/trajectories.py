@@ -251,7 +251,33 @@ class CubicWideStencilSpline(Spline):
     """
 
     def updatePolynomials(self):
-        raise NotImplementedError()
+        assert self.n >= 4
+
+        for i in range(self.n-1):
+            i_start, i_end = i-1, i+2
+            if i == 0:                    
+                i_start, i_end = 0, 3
+            elif i == self.n - 2:
+                i_start, i_end = i-2, i+1
+        
+            x = self.knots[i_start:i_end+1, 1]
+            t = self.knots[i_start:i_end+1, 0] - self.knots[i, 0]
+
+            A = np.array([
+                [t[0]**3, t[0]**2, t[0], 1],
+                [t[1]**3, t[1]**2, t[1], 1],
+                [t[2]**3, t[2]**2, t[2], 1],
+                [t[3]**3, t[3]**2, t[3], 1],
+            ])
+            B = x
+
+            solutions = np.linalg.solve(A, B)
+
+            self.coeffs[i, 0] = solutions[3]
+            self.coeffs[i, 1] = solutions[2]
+            self.coeffs[i, 2] = solutions[1]
+            self.coeffs[i, 3] = solutions[0]
+
 
 
 class CubicCustomDerivativeSpline(Spline):
