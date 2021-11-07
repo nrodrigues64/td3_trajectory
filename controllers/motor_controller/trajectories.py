@@ -499,7 +499,42 @@ class RobotTrajectory:
         parameters : dictionary or None
             A dictionary containing extra-parameters for trajectories
         """
-        raise NotImplementedError()
+        
+        assert (target_space in self.supported_spaces) and (planification_space in self.supported_spaces)
+
+        self.model = model
+        self.planification_space = planification_space
+        self.trajectories = []
+        self.start = start
+        self.end = start
+
+        target_len, target_dim = targets.shape
+
+        # Pour savoir si les cibles contiennent l'information de temps,
+        # on récupère le nombre de dimensions dans lesquelles opère le robot
+        self.nb_dim = len(model.getOperationalDimensionNames())
+        if target_space == "joint":
+            self.nb_dim = model.getNbJoints()     
+        time_info = False
+        if target_dim == self.nb_dim+1:
+            time_info = True
+        
+        # Pour chaque dimension, on calcule la trajectoire qu'on ajoute à la liste des trajectoires
+        # Si nécessaire, on met aussi à jour self.end
+        for i in range(self.nb_dim):
+            if time_info:
+                knots = np.zeros((target_len, 2))
+                knots[:, 0] = targets[:, 0]
+                knots[:, 1] = targets[:, i+1]
+            else:            
+                knots = targets[:, i]
+                
+            traj = buildTrajectory(trajectory_type, start, knots, parameters)
+            self.trajectories.append(traj)
+            if traj.getEnd() > self.end:
+                self.end = traj.getEnd()
+        
+
 
     def getVal(self, t, dim, degree, space):
         """
@@ -520,7 +555,25 @@ class RobotTrajectory:
             The value of derivative of order degree at time t on dimension dim
             of the chosen space, None if computation is not implemented or fails
         """
-        raise NotImplementedError()
+
+        if space == self.planification_space:
+            return self.trajectories[dim].getVal(t, degree)
+        
+        value = None
+        if space == "operational":            
+            if degree == 0: value = self.getOperationalTarget(t)
+            elif degree == 1: value = self.getOperationalVelocity(t)
+            elif degree == 2: value = self.getOperationalAcc(t)
+        elif space == "joint":
+            if degree == 0: value = self.getJointTarget(t)
+            elif degree == 1: value = self.getJointVelocity(t)
+            elif degree == 2: value = self.getJointAcc(t)
+        
+        if value:
+            return value[dim]
+        return None
+
+
 
     def getPlanificationVal(self, t, degree):
         # TODO: implement
