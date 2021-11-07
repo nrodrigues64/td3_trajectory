@@ -254,14 +254,18 @@ class CubicWideStencilSpline(Spline):
         assert self.n >= 4
 
         for i in range(self.n-1):
-            i_start, i_end = i-1, i+2
+            x,t = None, None
             if i == 0:                    
-                i_start, i_end = 0, 3
+                x = self.knots[0:4, 1]
+                t = self.knots[0:4, 0]
             elif i == self.n - 2:
-                i_start, i_end = i-2, i+1
-        
-            x = self.knots[i_start:i_end+1, 1]
-            t = self.knots[i_start:i_end+1, 0] - self.knots[i, 0]
+                x = self.knots[i-2:i+2, 1]
+                t = self.knots[i-2:i+2, 0]
+            else:
+                x = self.knots[i-1:i+3, 1]
+                t = self.knots[i-1:i+3, 0]
+            
+            t = t - self.knots[i, 0]
 
             A = np.array([
                 [t[0]**3, t[0]**2, t[0], 1],
