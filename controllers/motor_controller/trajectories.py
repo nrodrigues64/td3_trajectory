@@ -518,6 +518,15 @@ class RobotTrajectory:
         time_info = False
         if target_dim == self.nb_dim+1:
             time_info = True
+
+        if target_space != self.planification_space:
+            for i in range(target_len):
+                begin = 1 if time_info else 0
+                target = targets[i, begin:]
+                if planification_space == "joint":
+                    targets[i, begin:] = self.model.analyticalMGI(target)[1]
+                else:
+                    targets[i, begin:] = self.model.computeMGD(target)
         
         # Pour chaque dimension, on calcule la trajectoire qu'on ajoute à la liste des trajectoires
         # Si nécessaire, on met aussi à jour self.end
@@ -569,39 +578,53 @@ class RobotTrajectory:
             elif degree == 1: value = self.getJointVelocity(t)
             elif degree == 2: value = self.getJointAcc(t)
         
-        if value:
+        if value is not None:
             return value[dim]
         return None
 
 
 
     def getPlanificationVal(self, t, degree):
-        # TODO: implement
-        return None
+        value = []
+        for i in range(len(self.trajectories)):
+            value.append(self.trajectories[i].getVal(t, degree))
+        return value
 
     def getOperationalTarget(self, t):
-        # TODO: implement
-        return None
+        value = self.getPlanificationVal(t, 0)
+        if self.planification_space == "operational":
+            return value
+        return self.model.computeMGD(value)
 
     def getJointTarget(self, t):
-        # TODO: implement
-        return None
+        value = self.getPlanificationVal(t, 0)
+        if self.planification_space == "joint":
+            return value
+        return self.model.analyticalMGI(value)[1]
 
     def getOperationalVelocity(self, t):
-        # TODO: implement
-        return None
+        value = self.getPlanificationVal(t, 1)
+        if self.planification_space == "operational":
+            return value
+        return self.model.computeMGD(value)
 
     def getJointVelocity(self, t):
-        # TODO: implement
-        return None
+        value = self.getPlanificationVal(t, 1)
+        if self.planification_space == "joint":
+            return value
+        return self.model.analyticalMGI(value)[1]
 
     def getOperationalAcc(self, t):
-        # TODO: implement
-        return None
+        value = self.getPlanificationVal(t, 2)
+        if self.planification_space == "operational":
+            return value
+        return self.model.computeMGD(value)
 
     def getJointAcc(self, t):
-        # TODO: implement
-        return None
+        value = self.getPlanificationVal(t, 2)
+        if self.planification_space == "joint":
+            return value
+        return self.model.analyticalMGI(value)[1]
 
     def getStart(self):
         return self.start
