@@ -606,13 +606,13 @@ class RobotTrajectory:
         value = self.getPlanificationVal(t, 1)
         if self.planification_space == "operational":
             return value
-        return self.model.computeMGD(value)
+        return self.model.computeJacobian(self.getJointTarget(t)) @ value
 
     def getJointVelocity(self, t):
         value = self.getPlanificationVal(t, 1)
         if self.planification_space == "joint":
-            return value
-        return self.model.analyticalMGI(value)[1]
+            return value        
+        return np.linalg.pinv(self.model.computeJacobian(self.getJointTarget(t))) @ value
 
     def getOperationalAcc(self, t):
         value = self.getPlanificationVal(t, 2)
