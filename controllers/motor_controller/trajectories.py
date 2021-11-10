@@ -251,7 +251,37 @@ class CubicWideStencilSpline(Spline):
     """
 
     def updatePolynomials(self):
-        raise NotImplementedError()
+        assert self.n >= 4
+
+        for i in range(self.n-1):
+            x,t = None, None
+            if i == 0:                    
+                x = self.knots[0:4, 1]
+                t = self.knots[0:4, 0]
+            elif i == self.n - 2:
+                x = self.knots[i-2:i+2, 1]
+                t = self.knots[i-2:i+2, 0]
+            else:
+                x = self.knots[i-1:i+3, 1]
+                t = self.knots[i-1:i+3, 0]
+            
+            t = t - self.knots[i, 0]
+
+            A = np.array([
+                [t[0]**3, t[0]**2, t[0], 1],
+                [t[1]**3, t[1]**2, t[1], 1],
+                [t[2]**3, t[2]**2, t[2], 1],
+                [t[3]**3, t[3]**2, t[3], 1],
+            ])
+            B = x
+
+            solutions = np.linalg.solve(A, B)
+
+            self.coeffs[i, 0] = solutions[3]
+            self.coeffs[i, 1] = solutions[2]
+            self.coeffs[i, 2] = solutions[1]
+            self.coeffs[i, 3] = solutions[0]
+
 
 
 class CubicCustomDerivativeSpline(Spline):
@@ -260,12 +290,74 @@ class CubicCustomDerivativeSpline(Spline):
     Therefore, knots is of shape (N,3)
     """
     def updatePolynomials(self):
-        raise NotImplementedError()
+        assert self.knots.shape[1] >= 3
+
+        for i in range(self.n-1):
+            x0 = self.knots[i, 1]
+            x1 = self.knots[i+1, 1]
+            t0 = self.knots[i, 0]
+            t1 = self.knots[i+1, 0]
+            v0 = self.knots[i, 2]
+            v1 = self.knots[i+1, 2]
+            
+            delta_t = t1-t0
+            A = np.array([
+                [0, 0, 0, 1],
+                [delta_t**3, delta_t**2, delta_t, 1],
+                [0, 0, 1, 0],
+                [3*delta_t**2, 2*delta_t, 1, 0]
+            ])
+
+            B = np.array([x0, x1, v0, v1])
+
+            solutions = np.linalg.solve(A, B)
+
+            self.coeffs[i, 0] = solutions[3]
+            self.coeffs[i, 1] = solutions[2]
+            self.coeffs[i, 2] = solutions[1]
+            self.coeffs[i, 3] = solutions[0]
 
 
 class NaturalCubicSpline(Spline):
     def updatePolynomials(self):
-        raise NotImplementedError()
+        
+        A = np.zeros((4 * (self.n-1), 4 * (self.n-1)))
+        B = np.zeros(4 * (self.n-1))
+
+        for i in range(self.n-1):
+            x0 = self.knots[i, 1]
+            x1 = self.knots[i+1, 1]
+            t0 = self.knots[i, 0]
+            t1 = self.knots[i+1, 0]
+            
+            delta_t = t1-t0
+
+            start = 4*i
+            end = start + 4
+
+            A[start, start:end] = [0, 0, 0, 1]
+            A[start+1, start:end] = [delta_t**3, delta_t**2, delta_t, 1]
+            if i < self.n-2:
+                A[start+2, start:end] = [3*delta_t**2, 2*delta_t, 1, 0]
+                A[start+2, end:end+4] = [0, 0, -1, 0]
+                A[start+3, start:end] = [6*delta_t, 2, 0, 0]
+                A[start+3, end:end+4] = [0, -2, 0, 0]
+
+            B[4*i] = x0
+            B[4*i+1] = x1
+        
+        # contraintes supplémentaires
+        A[-2, 1] = 2
+        delta_t = self.knots[-1,0] - self.knots[-2,0]
+        A[-1, -4:-2] = [6*delta_t, 2]
+
+        coeffs = np.linalg.solve(A,B)
+
+        for i in range(self.n-1):
+            self.coeffs[i, 0] = coeffs[4*i+3]
+            self.coeffs[i, 1] = coeffs[4*i+2]
+            self.coeffs[i, 2] = coeffs[4*i+1]
+            self.coeffs[i, 3] = coeffs[4*i]
 
 
 class PeriodicCubicSpline(Spline):
@@ -274,18 +366,99 @@ class PeriodicCubicSpline(Spline):
     derivative are always equal on both sides of a knot. This i
     """
     def updatePolynomials(self):
-        raise NotImplementedError()
+        A = np.zeros((4 * (self.n-1), 4 * (self.n-1)))
+        B = np.zeros(4 * (self.n-1))
+
+        for i in range(self.n-1):
+            x0 = self.knots[i, 1]
+            x1 = self.knots[i+1, 1]
+            t0 = self.knots[i, 0]
+            t1 = self.knots[i+1, 0]
+            
+            delta_t = t1-t0
+
+            start = 4*i
+            end = start + 4
+
+            A[start, start:end] = [0, 0, 0, 1]
+            A[start+1, start:end] = [delta_t**3, delta_t**2, delta_t, 1]
+            if i < self.n-2:
+                A[start+2, start:end] = [3*delta_t**2, 2*delta_t, 1, 0]
+                A[start+2, end:end+4] = [0, 0, -1, 0]
+                A[start+3, start:end] = [6*delta_t, 2, 0, 0]
+                A[start+3, end:end+4] = [0, -2, 0, 0]
+
+            B[4*i] = x0
+            B[4*i+1] = x1
+        
+        # contraintes supplémentaires
+        delta_t = self.knots[-1,0] - self.knots[-2,0]
+        A[-2, 1] = 2
+        A[-2, -4:-2] = [-6*delta_t, -2]
+        A[-1, 2] = 1
+        A[-1, -4:] = [-3*delta_t**2, -2*delta_t, -1, 0]
+
+        coeffs = np.linalg.solve(A,B)
+
+        for i in range(self.n-1):
+            self.coeffs[i, 0] = coeffs[4*i+3]
+            self.coeffs[i, 1] = coeffs[4*i+2]
+            self.coeffs[i, 2] = coeffs[4*i+1]
+            self.coeffs[i, 3] = coeffs[4*i]
+
 
     def getVal(self, t, d=0):
-        raise NotImplementedError()
+        D = self.end - self.start
+        return super().getVal(self.start + (t-self.start)%D, d)
 
 
 class TrapezoidalVelocity(Trajectory):
     def __init__(self, knots, vMax, accMax, start):
-        raise NotImplementedError()
+        super().__init__(start)
+        self.x_src = knots[0]
+        self.x_end = knots[1]
+        self.D = self.x_end - self.x_src
+        self.vMax = vMax
+        self.accMax = accMax
+
+        if abs(self.D) > (vMax*vMax) / accMax:
+            self.Tacc = vMax / accMax
+        else:
+            self.Tacc = np.sqrt(abs(self.D) / accMax)
+        
+        self.Dacc = (self.accMax * self.Tacc * self.Tacc) / 2
+
+        self.end = self.start + 2*self.Tacc + (abs(self.D) - 2*self.Dacc) / vMax
 
     def getVal(self, t, d):
-        raise NotImplementedError()
+        if d < 0 or d > 2:
+            return 0
+        
+        if t < self.start:
+            if d == 0: return self.x_src
+            return 0
+        if t > self.end:
+            if d == 0: return self.x_end
+            return 0
+
+        D_sign = np.sign(self.D)
+        T = self.end - self.start
+
+        if t <= self.Tacc:
+            if d == 0: return self.x_src + D_sign * (self.accMax*t*t)/2
+            if d == 1: return D_sign * self.accMax * t
+            return D_sign * self.accMax
+
+        elif t > T - self.Tacc:
+            if d == 0: return self.x_end - D_sign * (self.accMax * (T-t) * (T-t))/2
+            if d == 1: return D_sign * self.accMax * (T-t)
+            return - D_sign * self.accMax
+
+        else:
+            if d == 0: return self.x_src + D_sign * (self.Dacc + self.vMax * (t-self.Tacc))
+            if d == 1: return D_sign * self.vMax
+            return 0
+        
 
 
 class RobotTrajectory:
@@ -326,7 +499,51 @@ class RobotTrajectory:
         parameters : dictionary or None
             A dictionary containing extra-parameters for trajectories
         """
-        raise NotImplementedError()
+        
+        assert (target_space in self.supported_spaces) and (planification_space in self.supported_spaces)
+
+        self.model = model
+        self.planification_space = planification_space
+        self.trajectories = []
+        self.start = start
+        self.end = start
+
+        target_len, target_dim = targets.shape
+
+        # Pour savoir si les cibles contiennent l'information de temps,
+        # on récupère le nombre de dimensions dans lesquelles opère le robot
+        self.nb_dim = len(model.getOperationalDimensionNames())
+        if target_space == "joint":
+            self.nb_dim = model.getNbJoints()     
+        time_info = False
+        if target_dim == self.nb_dim+1:
+            time_info = True
+
+        if target_space != self.planification_space:
+            for i in range(target_len):
+                begin = 1 if time_info else 0
+                target = targets[i, begin:]
+                if planification_space == "joint":
+                    targets[i, begin:] = self.model.analyticalMGI(target)[1]
+                else:
+                    targets[i, begin:] = self.model.computeMGD(target)
+        
+        # Pour chaque dimension, on calcule la trajectoire qu'on ajoute à la liste des trajectoires
+        # Si nécessaire, on met aussi à jour self.end
+        for i in range(self.nb_dim):
+            if time_info:
+                knots = np.zeros((target_len, 2))
+                knots[:, 0] = targets[:, 0]
+                knots[:, 1] = targets[:, i+1]
+            else:            
+                knots = targets[:, i]
+                
+            traj = buildTrajectory(trajectory_type, start, knots, parameters)
+            self.trajectories.append(traj)
+            if traj.getEnd() > self.end:
+                self.end = traj.getEnd()
+        
+
 
     def getVal(self, t, dim, degree, space):
         """
@@ -347,35 +564,67 @@ class RobotTrajectory:
             The value of derivative of order degree at time t on dimension dim
             of the chosen space, None if computation is not implemented or fails
         """
-        raise NotImplementedError()
+
+        if space == self.planification_space:
+            return self.trajectories[dim].getVal(t, degree)
+        
+        value = None
+        if space == "operational":            
+            if degree == 0: value = self.getOperationalTarget(t)
+            elif degree == 1: value = self.getOperationalVelocity(t)
+            elif degree == 2: value = self.getOperationalAcc(t)
+        elif space == "joint":
+            if degree == 0: value = self.getJointTarget(t)
+            elif degree == 1: value = self.getJointVelocity(t)
+            elif degree == 2: value = self.getJointAcc(t)
+        
+        if value is not None:
+            return value[dim]
+        return None
+
+
 
     def getPlanificationVal(self, t, degree):
-        # TODO: implement
-        return None
+        value = []
+        for i in range(len(self.trajectories)):
+            value.append(self.trajectories[i].getVal(t, degree))
+        return value
 
     def getOperationalTarget(self, t):
-        # TODO: implement
-        return None
+        value = self.getPlanificationVal(t, 0)
+        if self.planification_space == "operational":
+            return value
+        return self.model.computeMGD(value)
 
     def getJointTarget(self, t):
-        # TODO: implement
-        return None
+        value = self.getPlanificationVal(t, 0)
+        if self.planification_space == "joint":
+            return value
+        return self.model.analyticalMGI(value)[1]
 
     def getOperationalVelocity(self, t):
-        # TODO: implement
-        return None
+        value = self.getPlanificationVal(t, 1)
+        if self.planification_space == "operational":
+            return value
+        return self.model.computeMGD(value)
 
     def getJointVelocity(self, t):
-        # TODO: implement
-        return None
+        value = self.getPlanificationVal(t, 1)
+        if self.planification_space == "joint":
+            return value
+        return self.model.analyticalMGI(value)[1]
 
     def getOperationalAcc(self, t):
-        # TODO: implement
-        return None
+        value = self.getPlanificationVal(t, 2)
+        if self.planification_space == "operational":
+            return value
+        return self.model.computeMGD(value)
 
     def getJointAcc(self, t):
-        # TODO: implement
-        return None
+        value = self.getPlanificationVal(t, 2)
+        if self.planification_space == "joint":
+            return value
+        return self.model.analyticalMGI(value)[1]
 
     def getStart(self):
         return self.start
