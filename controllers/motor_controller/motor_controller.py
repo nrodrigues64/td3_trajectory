@@ -16,7 +16,7 @@ import trajectories
 ALLOWED_MODES = ['computeMGD', 'analyticalMGI', 'jacobianInverse', 'jacobianTransposed']
 DEFAULT_CONTROL_MODE = 'analyticalMGI'  # The mode used for the simulation see ALLOWED_MODES
 DEFAULT_ROBOT = 'RobotRRR'
-DEFAULT_TRAJECTORY_PATH = "robot_trajectories/rrr_periodic_joint.json"
+DEFAULT_TRAJECTORY_PATH = "robot_trajectories/rrr_linear_joint.json"
 
 # Setting parameters from environment variables
 control_mode = os.environ.get('CONTROL_MODE', DEFAULT_CONTROL_MODE)
